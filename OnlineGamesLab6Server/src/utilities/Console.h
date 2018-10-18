@@ -8,8 +8,28 @@ namespace app
 {
 	namespace debug
 	{
-		inline constexpr void log(std::string const & str);
-		inline constexpr void logLine(std::string const & str);
+		inline void log(std::string const & str);
+		inline void logLine(std::string const & str);
+
+		#ifndef _DEBUG
+
+		inline void app::debug::log(std::string const & str) { }
+		inline void app::debug::logLine(std::string const & str) { }
+
+		#else
+
+		inline void app::debug::log(std::string const & str)
+		{
+			std::cerr << str;
+		}
+
+		inline void app::debug::logLine(std::string const & str)
+		{
+			app::debug::log(str);
+			std::cerr << std::endl;
+		}
+
+		#endif
 	}
 }
 

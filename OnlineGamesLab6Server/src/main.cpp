@@ -4,6 +4,9 @@
 #include <string>
 #include <iostream>
 
+#include "utilities/Console.h"
+
+namespace console = app::debug;
 constexpr auto DEFAULT_BUFLEN = 512;
 constexpr auto DEFAULT_PORT = "27015";
 std::atomic_bool stop = false;
@@ -115,20 +118,22 @@ int __cdecl main(void)
 		return 1;
 	}
 
+	console::logLine("Accepting new connections");
 	bool acceptIncomingConnections = true;
 	do
 	{
 		// Accept a client socket
-		SOCKET ClientSocket = accept(ListenSocket, NULL, NULL);
-		if (ClientSocket == INVALID_SOCKET) {
+		SOCKET clientSocket = accept(ListenSocket, NULL, NULL);
+		if (clientSocket == INVALID_SOCKET) {
 			printf("accept failed with error: %d\n", WSAGetLastError());
 			closesocket(ListenSocket);
 			WSACleanup();
 			return EXIT_FAILURE;
 		}
-		clientSockets.push_back(std::move(ClientSocket));
+		console::logLine("Connection accepted! socket[" + std::to_string(clientSocket) + "]");
+		clientSockets.push_back(std::move(clientSocket));
 
-		std::cout << "Accept another connection: ";
+		console::logLine("Accept another connection: ");
 		{
 			auto inputStr = std::string();
 			std::getline(std::cin, inputStr);
@@ -142,58 +147,61 @@ int __cdecl main(void)
 
 	do
 	{
-		std::cout << "Waiting for a client packet" << std::endl;
-
-
-		// Receive until the peer shuts down the connection
-		do {
-			std::for_each(clientSockets.begin(), clientSockets.end(), [&](SOCKET & socket)
+		console::logLine("Processing packets");
+		for (auto itt = clientSockets.begin(); itt != clientSockets.end(); ++itt)
+		{
+			console::log("Awaiting bytes...  ");
+			SOCKET & socket = *itt;
+			if (auto result = recv(socket, recvbuf, recvbuflen, 0); result > 0)
 			{
-				if (auto result = recv(socket, recvbuf, recvbuflen, 0); result > 0)
+				console::logLine("received!");
+				console::logLine("Bytes received: " + std::to_string(result));
+
+				// Echo buffer back to the sender
+				if (auto sendResult = send(socket, recvbuf, result, 0); sendResult == SOCKET_ERROR)
 				{
-					
+					console::logLine("send failed with error: " + std::to_string(WSAGetLastError()));
+					closesocket(socket);
+					itt = clientSockets.erase(itt);
+					continue;
 				}
-			});
-			iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
-			if (iResult > 0) {
-				printf("Bytes received: %d\n", iResult);
-
-				// Echo the buffer back to the sender
-				iSendResult = send(ClientSocket, recvbuf, iResult, 0);
-				if (iSendResult == SOCKET_ERROR) {
-					printf("send failed with error: %d\n", WSAGetLastError());
-					closesocket(ClientSocket);
-					WSACleanup();
-					return 1;
+				else
+				{
+					console::logLine("Bytes sent: " + std::to_string(sendResult));
 				}
-				printf("Bytes sent: %d\n", iSendResult);
 			}
-			else if (iResult == 0)
-				printf("Connection closing...\n");
-			else {
-				printf("recv failed with error: %d\n", WSAGetLastError());
-				closesocket(ClientSocket);
-				WSACleanup();
-				return 1;
+			else if (result == 0)
+			{
+				console::logLine("Connection close requested...");
+				if (auto closeResult = shutdown(socket, SD_SEND); closeResult != 0)
+				{
+					console::logLine("Error on closing connection");
+					closesocket(socket);
+					itt = clientSockets.erase(itt);
+				}
+				else
+				{
+					console::logLine("closed connection (" + std::to_string(socket) + ")");
+				}
 			}
-
-		} while (iResult > 0);
-
-		// shutdown the connection since we're done
-		iResult = shutdown(ClientSocket, SD_SEND);
-		if (iResult == SOCKET_ERROR) {
-			printf("shutdown failed with error: %d\n", WSAGetLastError());
-			closesocket(ClientSocket);
-			WSACleanup();
-			return 1;
+			else
+			{
+				console::logLine("recv failed with error: " + std::to_string(WSAGetLastError()));
+				closesocket(socket);
+				itt = clientSockets.erase(itt);
+			}
 		}
 
+		console::log("End server (y/n): ");
+		{
+			auto inputStr = std::string();
+			std::getline(std::cin, inputStr);
+			stop = (inputStr == "y");
+		}
 	} while (!stop.load());
 
 	// cleanup
-	closesocket(ClientSocket);
+	for (auto & s : clientSockets) { if (s != INVALID_SOCKET) { shutdown(s, SD_BOTH); closesocket(s); } }
 	WSACleanup();
-
-	system("pause");
-	return 0;
+	return EXIT_SUCCESS;
 }
