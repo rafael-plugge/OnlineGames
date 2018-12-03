@@ -144,6 +144,8 @@ C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\release\*.dll" "$(TargetDir)
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\input\Keyhandler.cpp" />
+    <ClCompile Include="src\input\MouseHandler.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Registry.cpp" />
     <ClCompile Include="src\stdafx.cpp">
@@ -155,6 +157,8 @@ C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\release\*.dll" "$(TargetDir)
     <ClCompile Include="src\utilities\Time.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\input\Keyhandler.h" />
+    <ClInclude Include="src\input\MouseHandler.h" />
     <ClInclude Include="src\Registry.h" />
     <ClInclude Include="src\stdafx.h" />
     <ClInclude Include="src\utilities\Console.h" />
