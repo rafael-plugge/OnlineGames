@@ -9,7 +9,6 @@ namespace app::math
 	public: // Constructors/Destructor/Assignments
 		Vector2();
 		Vector2(T const & _x, T const & _y);
-		Vector2(sf::Vector2<T> const & v);
 
 		~Vector2() = default;
 
@@ -38,7 +37,7 @@ namespace app::math
 		T magnitude() const;
 		Vector2<T> & unit();
 
-		operator sf::Vector2<T>();
+		operator std::string();
 
 	public: // Public Static Variables
 	public: // Public Member Variables
@@ -94,16 +93,6 @@ namespace app::math
 	typedef Vector2<float> Vector2f;
 	typedef Vector2<int32_t> Vector2i;
 	typedef Vector2<uint32_t> Vector2u;
-
-	void to_json(js::json & j, app::math::Vector2d const & v);
-	void to_json(js::json & j, app::math::Vector2f const & v);
-	void to_json(js::json & j, app::math::Vector2i const & v);
-	void to_json(js::json & j, app::math::Vector2u const & v);
-
-	void from_json(js::json const & j, app::math::Vector2d & v);
-	void from_json(js::json const & j, app::math::Vector2f & v);
-	void from_json(js::json const & j, app::math::Vector2i & v);
-	void from_json(js::json const & j, app::math::Vector2u & v);
 }
 
 #endif // !_MATH_VECTOR_H

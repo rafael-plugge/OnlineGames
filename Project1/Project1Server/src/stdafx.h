@@ -1,10 +1,9 @@
-﻿// stdafx.h : include file for standard system include files,
+// stdafx.h : include file for standard system include files,
 // or project specific include files that are used frequently, but
 // are changed infrequently
 //
 
 #pragma once
-
 
 #ifdef _DEBUG
 
@@ -34,8 +33,6 @@
 #pragma comment(lib, "SDL2test.lib")
 #pragma comment(lib, "SDL2_image.lib")
 #pragma comment (lib, "Ws2_32.lib")
-#pragma comment (lib, "Mswsock.lib")
-#pragma comment (lib, "AdvApi32.lib")
 /*********************************/
 /**  END Independant Libraries  **/
 /*********************************/
@@ -65,16 +62,14 @@
 #include <tuple>
 #include <initializer_list>
 #include <limits>
-#include <variant>
-#include <optional>
 
 // STL Input/Output libraries
 #include <string>
 #include <sstream>
 #include <istream>
 #include <ostream>
-#include <fstream>
 #include <iostream>
+#include <fstream>
 #include <filesystem>
 
 // STL Multithreading libraries
@@ -105,18 +100,6 @@
 /**         Includes here       **/
 /*********************************/
 
-#include "math/Vector2.h"
-
-#include "input/Keyhandler.h"
-#include "input/MouseHandler.h"
-
-#include "utilities/Console.h"
-#include "utilities/Time.h"
-#include "utilities/SdlDeleter.h"
-#include "utilities/PacketType.h"
-
-#include "graphics/Texture.h"
-
 // Global constants
 namespace app
 {
@@ -129,4 +112,13 @@ namespace app
 	};
 }
 
-#include "game/Player.h"
+#define _DEBUG_THREAD_SAFE
+#include "../../Project1Client/src/utilities/Console.h"
+#include "../../Project1Client/src/utilities/Time.h"
+#include "../../Project1Client/src/utilities/WinSockDeleter.h"
+#include "../../Project1Client/src/utilities/SdlDeleter.h"
+#include "../../Project1Client/src/utilities/PacketType.h"
+#include "../../Project1Client/src/math/Vector2.h"
+#include "../../Project1Client/src/input/Keyhandler.h"
+#include "../../Project1Client/src/graphics/Texture.h"
+#include "../../Project1Client/src/game/Player.h"

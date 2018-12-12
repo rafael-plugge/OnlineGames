@@ -20,8 +20,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{5c4ec8fc-7c64-425c-8801-5bbb0bcc1079}</ProjectGuid>
-    <RootNamespace>Project1Client</RootNamespace>
+    <ProjectGuid>{ecbc8a68-84bd-4b96-92b5-bbe6064fe3c1}</ProjectGuid>
+    <RootNamespace>Project1Server</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -70,12 +70,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir)deps\include;$(ProjectDir)deps\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)deps\lib;$(SolutionDir)deps\lib\$(IntDir);$(ProjectDir)deps\lib;$(ProjectDir)deps\lib\$(IntDir);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)deps\include;$(SolutionDir)deps\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)deps\lib;$(SolutionDir)deps\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(SolutionDir)deps\include;$(ProjectDir)deps\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)deps\lib;$(SolutionDir)deps\lib\$(IntDir);$(ProjectDir)deps\lib;$(ProjectDir)deps\lib\$(IntDir);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir)deps\include;$(SolutionDir)deps\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)deps\lib;$(SolutionDir)deps\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -83,15 +83,15 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <AdditionalIncludeDirectories>.\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>.\deps\libs;.\deps\libs\dbg;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
     <PostBuildEvent>
-      <Command>C:\windows\system32\xcopy /Y "$(SolutionDir)deps\bin\*.dll" "$(TargetDir)"
-C:\windows\system32\xcopy /Y "$(SolutionDir)deps\bin\debug\*.dll" "$(TargetDir)"
-C:\windows\system32\xcopy /Y "$(SolutionDir)deps\bin\debug\*.pdg" "$(TargetDir)"
-C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\*.dll" "$(TargetDir)"
+      <Command>C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\*.dll" "$(TargetDir)"
 C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\debug\*.dll" "$(TargetDir)"
 C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\debug\*.pdg" "$(TargetDir)"</Command>
     </PostBuildEvent>
@@ -102,7 +102,6 @@ C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\debug\*.pdg" "$(TargetDir)"<
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -113,18 +112,17 @@ C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\debug\*.pdg" "$(TargetDir)"<
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <AdditionalIncludeDirectories>.\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>Use</PrecompiledHeader>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>.\deps\libs;.\deps\libs\rls;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>C:\windows\system32\xcopy /Y "$(SolutionDir)deps\bin\*.dll" "$(TargetDir)"
-C:\windows\system32\xcopy /Y "$(SolutionDir)deps\bin\release\*.dll" "$(TargetDir)"
-C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\*.dll" "$(TargetDir)"
+      <Command>C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\*.dll" "$(TargetDir)"
 C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\release\*.dll" "$(TargetDir)"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -136,7 +134,6 @@ C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\release\*.dll" "$(TargetDir)
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -144,48 +141,44 @@ C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\release\*.dll" "$(TargetDir)
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\Client.cpp" />
-    <ClCompile Include="src\Game.cpp" />
-    <ClCompile Include="src\game\Player.cpp" />
-    <ClCompile Include="src\graphics\Texture.cpp" />
-    <ClCompile Include="src\graphics\Window.cpp" />
-    <ClCompile Include="src\graphics\WindowsParams.cpp" />
-    <ClCompile Include="src\input\Keyhandler.cpp" />
-    <ClCompile Include="src\input\MouseHandler.cpp" />
+    <ClCompile Include="..\Project1Client\src\game\Player.cpp" />
+    <ClCompile Include="..\Project1Client\src\graphics\Texture.cpp" />
+    <ClCompile Include="..\Project1Client\src\input\Keyhandler.cpp" />
+    <ClCompile Include="..\Project1Client\src\math\Vector2.cpp" />
+    <ClCompile Include="..\Project1Client\src\utilities\Console.cpp" />
+    <ClCompile Include="..\Project1Client\src\utilities\Network.cpp" />
+    <ClCompile Include="..\Project1Client\src\utilities\PacketType.cpp" />
+    <ClCompile Include="..\Project1Client\src\utilities\SdlDeleter.cpp" />
+    <ClCompile Include="..\Project1Client\src\utilities\Time.cpp" />
+    <ClCompile Include="..\Project1Client\src\utilities\WinSockDeleter.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\math\Vector2.cpp" />
+    <ClCompile Include="src\Server.cpp" />
     <ClCompile Include="src\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\utilities\Console.cpp" />
-    <ClCompile Include="src\utilities\Network.cpp" />
-    <ClCompile Include="src\utilities\PacketType.cpp" />
-    <ClCompile Include="src\utilities\SdlDeleter.cpp" />
-    <ClCompile Include="src\utilities\Time.cpp" />
-    <ClCompile Include="src\utilities\WinSockDeleter.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Client.h" />
-    <ClInclude Include="src\Game.h" />
-    <ClInclude Include="src\game\Player.h" />
-    <ClInclude Include="src\graphics\Texture.h" />
-    <ClInclude Include="src\graphics\Window.h" />
-    <ClInclude Include="src\graphics\WindowsParams.h" />
-    <ClInclude Include="src\input\Keyhandler.h" />
-    <ClInclude Include="src\input\MouseHandler.h" />
-    <ClInclude Include="src\math\Vector2.h" />
+    <ClInclude Include="..\Project1Client\src\game\Player.h" />
+    <ClInclude Include="..\Project1Client\src\graphics\Texture.h" />
+    <ClInclude Include="..\Project1Client\src\input\Keyhandler.h" />
+    <ClInclude Include="..\Project1Client\src\math\Vector2.h" />
+    <ClInclude Include="..\Project1Client\src\utilities\Console.h" />
+    <ClInclude Include="..\Project1Client\src\utilities\Network.h" />
+    <ClInclude Include="..\Project1Client\src\utilities\PacketType.h" />
+    <ClInclude Include="..\Project1Client\src\utilities\SdlDeleter.h" />
+    <ClInclude Include="..\Project1Client\src\utilities\Time.h" />
+    <ClInclude Include="..\Project1Client\src\utilities\WinSockDeleter.h" />
+    <ClInclude Include="src\Server.h" />
     <ClInclude Include="src\stdafx.h" />
-    <ClInclude Include="src\utilities\Console.h" />
-    <ClInclude Include="src\utilities\Network.h" />
-    <ClInclude Include="src\utilities\PacketType.h" />
-    <ClInclude Include="src\utilities\SdlDeleter.h" />
-    <ClInclude Include="src\utilities\Time.h" />
-    <ClInclude Include="src\utilities\WinSockDeleter.h" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\green-circle.png" />
-    <Image Include="res\red-circle.png" />
+    <None Include="res\.gitkeep" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Project1Client\Project1Client.vcxproj">
+      <Project>{5c4ec8fc-7c64-425c-8801-5bbb0bcc1079}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

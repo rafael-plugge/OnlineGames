@@ -1,4 +1,5 @@
 ﻿#include "stdafx.h"
+#include <cassert>
 #include "Vector2.h"
 
 template<typename T>
@@ -12,13 +13,6 @@ template<typename T>
 app::math::Vector2<T>::Vector2(T const & _x, T const & _y)
 	: x(_x)
 	, y(_y)
-{
-}
-
-template<typename T>
-app::math::Vector2<T>::Vector2(sf::Vector2<T> const & v)
-	: x(v.x)
-	, y(v.y)
 {
 }
 
@@ -123,9 +117,16 @@ app::math::Vector2<T> & app::math::Vector2<T>::unit()
 }
 
 template<typename T>
-app::math::Vector2<T>::operator sf::Vector2<T>()
+app::math::Vector2<T>::operator std::string()
 {
-	return sf::Vector2<T>(this->x, this->y);
+	auto msg = std::string();
+	msg.reserve(10);
+	msg.append("(")
+		.append(std::to_string(this->x))
+		.append(",")
+		.append(std::to_string(this->y))
+		.append(")");
+	return std::move(msg);
 }
 
 /************************************************************************/
@@ -247,51 +248,3 @@ template class app::math::Vector2<double>;
 template class app::math::Vector2<float>;
 template class app::math::Vector2<int32_t>;
 template class app::math::Vector2<uint32_t>;
-
-void app::math::to_json(js::json & j, app::math::Vector2d const & v)
-{
-	j["x"] = v.x;
-	j["y"] = v.y;
-}
-
-void app::math::to_json(js::json & j, app::math::Vector2f const & v)
-{
-	j["x"] = v.x;
-	j["y"] = v.y;
-}
-
-void app::math::to_json(js::json & j, app::math::Vector2i const & v)
-{
-	j["x"] = v.x;
-	j["y"] = v.y;
-}
-
-void app::math::to_json(js::json & j, app::math::Vector2u const & v)
-{
-	j["x"] = v.x;
-	j["y"] = v.y;
-}
-
-void app::math::from_json(js::json const & j, app::math::Vector2d & v)
-{
-	v.x = j.at("x").get<decltype(v.x)>();
-	v.y = j.at("y").get<decltype(v.x)>();
-}
-
-void app::math::from_json(js::json const & j, app::math::Vector2f & v)
-{
-	v.x = j.at("x").get<decltype(v.x)>();
-	v.y = j.at("y").get<decltype(v.x)>();
-}
-
-void app::math::from_json(js::json const & j, app::math::Vector2i & v)
-{
-	v.x = j.at("x").get<decltype(v.x)>();
-	v.y = j.at("y").get<decltype(v.x)>();
-}
-
-void app::math::from_json(js::json const & j, app::math::Vector2u & v)
-{
-	v.x = j.at("x").get<decltype(v.x)>();
-	v.y = j.at("y").get<decltype(v.x)>();
-}

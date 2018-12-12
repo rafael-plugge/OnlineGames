@@ -17,39 +17,44 @@ namespace app::inp
 		bool isKeyUp(KeyType const & key) const;
 		bool isKeyUp(std::initializer_list<KeyType> const & key) const;
 		bool isKeyPressed(KeyType const & key) const;
+
+		static KeyHandler & getRef();
 	private:
-		std::map<const KeyType, bool> _keyNowMap;
-		std::map<const KeyType, bool> _keyPrevMap;
+		static std::unique_ptr<KeyHandler> s_ptr;
+		std::map<const KeyType, bool> m_keyNowMap;
+		std::map<const KeyType, bool> m_keyPrevMap;
 	};
 
 	#pragma region Implementation
 
+	template<typename KeyType>
+	std::unique_ptr<app::inp::KeyHandler<KeyType>> app::inp::KeyHandler<KeyType>::s_ptr = nullptr;
 
 	template<typename KeyType>
 	void app::inp::KeyHandler<KeyType>::updateKey(KeyType const & key, bool const & pressed)
 	{
-		if (auto itt = _keyNowMap.find(key); itt != _keyNowMap.end())
+		if (auto itt = m_keyNowMap.find(key); itt != m_keyNowMap.end())
 		{
 			auto &[key, value] = *itt;
 			value = pressed;
 		}
 		else
 		{
-			_keyNowMap.insert({ key, pressed });
-			_keyPrevMap.insert({ key, !pressed });
+			m_keyNowMap.insert({ key, pressed });
+			m_keyPrevMap.insert({ key, !pressed });
 		}
 	}
 
 	template<typename KeyType>
 	void app::inp::KeyHandler<KeyType>::update()
 	{
-		_keyPrevMap = _keyNowMap;
+		m_keyPrevMap = m_keyNowMap;
 	}
 
 	template<typename KeyType>
 	bool app::inp::KeyHandler<KeyType>::isKeyDown(KeyType const & key) const
 	{
-		if (auto const & itt = _keyNowMap.find(key); itt != _keyNowMap.end())
+		if (auto const & itt = m_keyNowMap.find(key); itt != m_keyNowMap.end())
 		{
 			auto const &[key, value] = *itt;
 			return value;
@@ -60,7 +65,7 @@ namespace app::inp
 	template<typename KeyType>
 	bool app::inp::KeyHandler<KeyType>::isKeyDown(std::initializer_list<KeyType> const & keys) const
 	{
-		for (auto const &[mapKey, mapValue] : _keyNowMap)
+		for (auto const &[mapKey, mapValue] : m_keyNowMap)
 		{
 			if (mapValue && std::find(keys.begin(), keys.end(), mapKey) != keys.end()) { return true; }
 		}
@@ -70,7 +75,7 @@ namespace app::inp
 	template<typename KeyType>
 	bool app::inp::KeyHandler<KeyType>::isKeyUp(KeyType const & key) const
 	{
-		if (auto const & itt = _keyNowMap.find(key); itt != _keyNowMap.end())
+		if (auto const & itt = m_keyNowMap.find(key); itt != m_keyNowMap.end())
 		{
 			auto const &[key, value] = *itt;
 			return !value;
@@ -81,7 +86,7 @@ namespace app::inp
 	template<typename KeyType>
 	bool app::inp::KeyHandler<KeyType>::isKeyUp(std::initializer_list<KeyType> const & keys) const
 	{
-		for (auto const &[mapKey, mapValue] : _keyNowMap)
+		for (auto const &[mapKey, mapValue] : m_keyNowMap)
 		{
 			if (!mapValue && std::find(keys.begin(), keys.end(), mapKey) != keys.end()) { return true; }
 		}
@@ -91,11 +96,11 @@ namespace app::inp
 	template<typename KeyType>
 	bool app::inp::KeyHandler<KeyType>::isKeyPressed(KeyType const & keyPressed) const
 	{
-		if (auto const & itt = _keyNowMap.find(keyPressed); itt != _keyNowMap.end())
+		if (auto const & itt = m_keyNowMap.find(keyPressed); itt != m_keyNowMap.end())
 		{
 			auto const &[key, value] = *itt;
 
-			if (auto const & prevItt = _keyPrevMap.find(key); prevItt != _keyPrevMap.end())
+			if (auto const & prevItt = m_keyPrevMap.find(key); prevItt != m_keyPrevMap.end())
 			{
 				auto const &[prevKey, prevValue] = *prevItt;
 				return value && !prevValue;
@@ -103,6 +108,13 @@ namespace app::inp
 			return value;
 		}
 		return false;
+	}
+
+	template<typename KeyType>
+	app::inp::KeyHandler<KeyType> & KeyHandler<KeyType>::getRef()
+	{
+		if (!s_ptr) { s_ptr = std::make_unique<KeyHandler<KeyType>>(); }
+		return *s_ptr;
 	}
 
 

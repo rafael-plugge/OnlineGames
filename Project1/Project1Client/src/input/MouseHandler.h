@@ -19,6 +19,7 @@ namespace app::inp
 		MouseHandler<ButtonType> & operator=(MouseHandler<ButtonType> &&) = default;
 
 	public: // Public Static Functions
+		static MouseHandler<ButtonType> & getRef();
 	public: // Public Member Functions
 		void updateButton(ButtonType const & button, bool const & pressed);
 		void updatePosition(std::int32_t const & x, std::int32_t const & y);
@@ -44,6 +45,7 @@ namespace app::inp
 		static bool isButtonUp(map const & keyMap, std::initializer_list<ButtonType> const & buttons);
 	private: // Private Member Functions
 	private: // Private Static Variables
+		static std::unique_ptr<MouseHandler<ButtonType>> s_ptr;
 	private: // Private Member Variables
 		map m_keyNowMap;
 		map m_keyPrevMap;
@@ -54,6 +56,16 @@ namespace app::inp
 	};
 
 	#pragma region Implementation
+
+	template<typename ButtonType>
+	std::unique_ptr<app::inp::MouseHandler<ButtonType>> app::inp::MouseHandler<ButtonType>::s_ptr = nullptr;
+
+	template<typename ButtonType>
+	MouseHandler<ButtonType>& MouseHandler<ButtonType>::getRef()
+	{
+		if (!s_ptr) { s_ptr = std::make_unique<MouseHandler<ButtonType>>(); }
+		return *s_ptr;
+	}
 
 	template<typename ButtonType>
 	void app::inp::MouseHandler<ButtonType>::updateButton(ButtonType const & button, bool const & pressed)
