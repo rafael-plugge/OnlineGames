@@ -1,191 +1,160 @@
-﻿#include "stdafx.h"
 #include "Server.h"
 
-constexpr bool publicIp = false;
-
-app::Server::Server()
-	: m_running()
-	, m_wsaInit(false)
-	, m_serverSocket(INVALID_SOCKET)
-	, m_clientSockets{ INVALID_SOCKET, INVALID_SOCKET }
-	, m_addressInfo()
+Server::Server(int PORT, bool BroadcastPublically) //Port = port to broadcast on. BroadcastPublically = false if server is not open to the public (people outside of your router), true = server is open to everyone (assumes that the port is properly forwarded on router settings)
 {
-}
-
-app::Server::~Server()
-{
-	if (m_wsaInit) { WSACleanup(); }
-	if (m_serverSocket != INVALID_SOCKET) { closesocket(m_serverSocket); }
-}
-
-int app::Server::run()
-{
-
-	using clock = std::chrono::high_resolution_clock;
-	constexpr app::time::nanoseconds updateStep =
-		app::time::toNanos(std::chrono::duration<double, std::milli>(10 / 60.0 * 1000.0));
-	clock::time_point deltaTimePoint = clock::now();
-	app::time::nanoseconds elapsedTime = updateStep;
-	app::time::nanoseconds deltaRenderStep = app::time::nanoseconds::zero();
-
-	if (m_running.store(this->init()); !m_running.load()) { return EXIT_FAILURE; }
-
-	while (m_running.load())
+	//Winsock Startup
+	WSAData wsaData;
+	WORD DllVersion = MAKEWORD(2, 1);
+	if (WSAStartup(DllVersion, &wsaData) != 0) //If WSAStartup returns anything other than 0, then that means an error has occured in the WinSock Startup.
 	{
-		elapsedTime += app::time::toNanos(clock::now() - deltaTimePoint);
-		deltaTimePoint = clock::now();
-		while (elapsedTime > updateStep)
-		{
-			this->update(updateStep);
-			elapsedTime -= updateStep;
-		}
+		MessageBoxA(NULL, "WinSock startup failed", "Error", MB_OK | MB_ICONERROR);
+		exit(1);
 	}
 
-	std::system("pause");
-	return EXIT_SUCCESS;
+	if (BroadcastPublically) //If server is open to public
+		addr.sin_addr.s_addr = htonl(INADDR_ANY);
+	else //If server is only for our router
+		addr.sin_addr.s_addr = inet_addr("127.0.0.1"); //Broadcast locally
+	addr.sin_port = htons(PORT); //Port
+	addr.sin_family = AF_INET; //IPv4 Socket
+
+	sListen = socket(AF_INET, SOCK_STREAM, NULL); //Create socket to listen for new connections
+	if (bind(sListen, (SOCKADDR*)&addr, sizeof(addr)) == SOCKET_ERROR) //Bind the address to the socket, if we fail to bind the address..
+	{
+		std::string ErrorMsg = "Failed to bind the address to our listening socket. Winsock Error:" + std::to_string(WSAGetLastError());
+		MessageBoxA(NULL, ErrorMsg.c_str(), "Error", MB_OK | MB_ICONERROR);\
+		exit(1);
+	}
+	if (listen(sListen, SOMAXCONN) == SOCKET_ERROR) //Places sListen socket in a state in which it is listening for an incoming connection. Note:SOMAXCONN = Socket Oustanding Max Connections, if we fail to listen on listening socket...
+	{
+		std::string ErrorMsg = "Failed to listen on listening socket. Winsock Error:" + std::to_string(WSAGetLastError());
+		MessageBoxA(NULL, ErrorMsg.c_str(), "Error", MB_OK | MB_ICONERROR);
+		exit(1);
+	}
+	server = this;
 }
 
-bool app::Server::init()
+bool Server::ListenForNewConnection()
 {
-	try
+	SOCKET newConnection = accept(sListen, (SOCKADDR*)&addr, &addrlen); //Accept a new connection
+	if (newConnection == 0) //If accepting the client connection failed
 	{
-		return this->initWindowsSocket() && this->initServerAddress() && this->initServerSocket();
-	}
-	catch (std::exception const & e)
-	{
-		Console::writeLine({ "Server::init failed with Error: [\n", e.what(), "\n]" });
+		std::cout << "Failed to accept the client's connection." << std::endl;
 		return false;
 	}
-}
-
-bool app::Server::initWindowsSocket()
-{
-	try
+	else //If client connection properly accepted
 	{
-		WSADATA wsadata;
-		if (auto result = WSAStartup(MAKEWORD(2, 2), &wsadata); result != NULL)
-		{
-			m_wsaInit = false;
-			Console::writeLine({ "WSAStartup failed with error: [", std::to_string(result), "]" });
-			throw;
-		}
-		else
-		{
-			m_wsaInit = true;
-		}
 
+		std::cout << "Client Connected! ID:" << TotalConnections << std::endl;
+		Connections[TotalConnections] = newConnection; 
+		CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ClientHandlerThread, (LPVOID)(TotalConnections), NULL, NULL); 
+		std::string MOTD = "Welcome!";
+		SendString(TotalConnections, MOTD);
+		if (TotalConnections == 0) //player 1
+		{	
+			//if this is the first connection make them the authoritative host.
+			SendPacketType(TotalConnections, P_Authority);
+
+			//create player 1 and send data to that client
+			Player playerPlayer(50, 100, 100, Color::RED);
+			sendSetPlayer(TotalConnections, playerPlayer);
+		}
+		else if (TotalConnections == 1) //player 2
+		{
+			//create player 2 and send data to that client
+			Player playerPlayer(50, 500, 200, Color::BLUE);
+			sendSetPlayer(TotalConnections, playerPlayer);
+		}
+		TotalConnections += 1; //Incremenent total # of clients that have connected
 		return true;
 	}
-	catch (std::exception const & e)
-	{
-		Console::writeLine({ "Server::initWindowsSocket failed with Error: [\n", e.what(), "\n]" });
-		return false;
-	}
 }
 
-bool app::Server::initServerAddress()
+bool Server::ProcessPacket(int ID, Packet _packettype)
 {
-	constexpr auto DEFAULT_PORT = 27020;
-	try
+	switch (_packettype)
 	{
-		m_addressInfo.sin_addr.s_addr = publicIp
-			? htonl(INADDR_ANY)
-			: inet_addr("127.0.0.1");
-		m_addressInfo.sin_port = htons(DEFAULT_PORT);
-		m_addressInfo.sin_family = AF_INET;
-
-		return true;
-	}
-	catch (std::exception const & e)
-	{
-		Console::writeLine({ "Server::initServerAddress failed with Error: [\n", e.what(), "\n]" });
-		return false;
-	}
-}
-
-bool app::Server::initServerSocket()
-{
-	try
-	{
-		if (m_serverSocket = socket(AF_INET, SOCK_STREAM, NULL); m_serverSocket == INVALID_SOCKET)
+		case P_ChatMessage: //Packet Type: chat message
 		{
-			Console::writeLine({ "Socket failed with error: [", std::to_string(WSAGetLastError()), "]" });
-			throw;
-		}
-
-		if (auto result = bind(m_serverSocket, reinterpret_cast<SOCKADDR*>(&m_addressInfo), m_addressInfoLength); result == SOCKET_ERROR)
-		{
-			Console::writeLine({ "bind failed with error [", std::to_string(WSAGetLastError()), "]" });
-			throw;
-		}
-
-		if (auto result = listen(m_serverSocket, SOMAXCONN); result == SOCKET_ERROR)
-		{
-			Console::writeLine({ "listen failed with error: [", std::to_string(WSAGetLastError()), "]" });
-			throw;
-		}
-		return true;
-	}
-	catch (std::exception const & e)
-	{
-		Console::writeLine({ "Server::initServerAddress failed with Error: [\n", e.what(), "\n]" });
-		return false;
-	}
-}
-
-void app::Server::update(app::time::nanoseconds const & dt)
-{
-	if (this->isAcceptingConnections())
-	{
-		Console::writeLine("Accepting Incoming Connections");
-		for (std::size_t i = 0; i < m_clientSockets.size(); ++i)
-		{
-			if (m_clientSockets.at(i) == INVALID_SOCKET)
+			std::string Message; //string to store our message we received
+			if (!GetString(ID, Message)) //Get the chat message and store it in variable: Message
+				return false; //If we do not properly get the chat message, return false
+							  //Next we need to send the message out to each user
+			for (int i = 0; i < TotalConnections; i++)
 			{
-				m_clientSockets.at(i) = accept(m_serverSocket, reinterpret_cast<SOCKADDR*>(&m_addressInfo), &m_addressInfoLength);;
-				Console::writeLine({ "Connection Received: [", std::to_string(m_clientSockets.at(i)), "]" });
-				if (m_clientSockets.at(i) == INVALID_SOCKET)
+				if (i == ID) //If connection is the user who sent the message...
+					continue;//Skip to the next user since there is no purpose in sending the message back to the user who sent it.
+				if (!SendString(i, Message)) //Send message to connection at index i, if message fails to be sent...
 				{
-					Console::writeLine({ "accept failed with error: [", std::to_string(WSAGetLastError()), "]" });
-				}
-				else
-				{
-					if (i == 1)
-					{
-						
-					}
-					Console::writeLine("Connection successfull!");
+					std::cout << "Failed to send message from client ID: " << ID << " to client ID: " << i << std::endl;
 				}
 			}
+			std::cout << "Processed chat message packet from user ID: " << ID << std::endl;
+			break;
+		}
+		case P_PlayerData: //Packet type: player data
+		{
+			Player* player = new Player();
+			if (!GetPlayer(ID, *player))
+			{
+				delete player;
+				return false;
+			}
+			for (int i = 0; i < TotalConnections; i++)
+			{
+				if (i == ID) //If connection is the user who sent the message...
+					continue;//Skip to the next user since there is no purpose in sending the message back to the user who sent it.
+				if (!SendPlayer(i, *player)) //Send message to connection at index i, if message fails to be sent...
+				{
+					std::cout << "Failed to send player data from client ID: " << ID << " to client ID: " << i << std::endl;
+				}
+			}
+			std::cout << "player id[" << ID << "] radius [" << player->m_radius << "]" << std::endl;
+			std::cout << "	(x,y) -> (" << player->m_xPos << "," << player->m_yPos << ")" << std::endl;
+			delete player;
+			break;
+		}
+		case P_EndGame:
+		{
+			std::cout << "Game State = end" << std::endl;
+			bool* gameState = new bool();
+			if (!getEndGame(ID, *gameState))
+			{
+				delete gameState;
+				return false;
+			}
+			for (int i = 0; i < TotalConnections; i++)
+			{
+				if (i == ID) //If connection is the user who sent the message...
+					continue;//Skip to the next user since there is no purpose in sending the message back to the user who sent it.
+				if (!sendEndGame(i, *gameState)) //Send message to connection at index i, if message fails to be sent...
+				{
+					std::cout << "Failed to send endgame data from client ID: " << ID << " to client ID: " << i << std::endl;
+				}
+			}
+			delete gameState;
+			break;
+		}
+		default: //If packet type is not accounted for
+		{
+			std::cout << "Unrecognized packet: " << _packettype << std::endl; //Display that packet was not found
+			break;
 		}
 	}
-	else
-	{
-		if (!m_running.load()) { return; }
-		Console::writeLine("Settings client threads");
-		auto clientThreads = std::vector<std::thread>();
-		auto lambda = [this](auto clientSocket, auto targetSocket, std::string clientName, std::size_t index) -> void
-		{
-			Console::writeLine({ clientName, ": starting thread" });
-			Console::writeLine({ clientName, ": awaiting bytes... " });
-
-			auto type = app::PacketType::Position;
-			while (true)
-			{
-				if (!app::net::recv(clientSocket, type)) break;
-				if (!app::net::processPacket(clientSocket, targetSocket, type)) break;
-			}
-			Console::writeLine({ clientName, ": Lost connection" });
-			closesocket(clientSocket);
-		};
-		clientThreads.push_back(std::thread(lambda, m_clientSockets.at(0), m_clientSockets.at(1), std::string("client[0]"), 0));
-		clientThreads.push_back(std::thread(lambda, m_clientSockets.at(1), m_clientSockets.at(0), std::string("client[1]"), 1));
-		for (auto & thread : clientThreads) { thread.join(); }
-		m_running.store(false);
-	}
+	return true;
 }
 
-bool app::Server::isAcceptingConnections()
+void Server::ClientHandlerThread(int ID) //ID = the index in the SOCKET Connections array
 {
-	return std::find_if(std::execution::par, m_clientSockets.begin(), m_clientSockets.end(), [](auto sock) { return sock == INVALID_SOCKET; }) != m_clientSockets.end();
+	Packet PacketType;
+	while (true)
+	{
+		if (!server->GetPacketType(ID, PacketType)) //Get packet type
+			break; //If there is an issue getting the packet type, exit this loop
+		if (!server->ProcessPacket(ID, PacketType)) //Process packet (packet type)
+			break; //If there is an issue processing the packet, exit this loop
+	}
+	std::cout << "Lost connection to client ID: " << ID << std::endl;
+	closesocket(server->Connections[ID]);
+	return;
 }

@@ -1,49 +1,81 @@
-﻿#ifndef _GAME_H
-#define _GAME_H
+#pragma once
+#include <SDL/SDL.h> //SDL/
+#include <SDL/SDL_image.h>
+#include <stdio.h>
+#include <functional>
+#include <vector>
+#include <memory>
+#include "Player.h"
+#undef main //some weird vodoo magic with sdl sdl_main is included automatically so have to do this define
 
-#include "graphics/Window.h"
-#include "game/Player.h"
-#include "Client.h"
-
-namespace app
+// Deal with cyclical referencing
+class Client;
+class Game
 {
-	class Game
-	{
-	public: // Constructors/Destructor/Assignments
-		Game(Client & client);
-		~Game();
+public:
+	Game(Client* session);
+	~Game();
+	//Starts up SDL and creates window
+	bool init();
 
-		Game(Game const &) = default;
-		Game & operator=(Game const &) = default;
+	//Loads media
+	bool loadMedia();
+	//method to load a texture
+	SDL_Texture* loadTexture(std::string path);
 
-		Game(Game &&) = default;
-		Game & operator=(Game &&) = default;
+	void loop();
 
-	public: // Public Static Functions
-	public: // Public Member Functions
-		int run();
-	public: // Public Static Variables
-	public: // Public Member Variables
-		std::atomic_bool m_start;
-		game::Player m_player1;
-		game::Player m_enemy;
-	protected: // Protected Static Functions
-	protected: // Protected Member Functions
-	protected: // Protected Static Variables
-	protected: // Protected Member Variables
-	private: // Private Static Functions
-	private: // Private Member Functions
-		void update(app::time::nanoseconds const & dt);
-		void render(app::time::nanoseconds const & dt);
-	private: // Private Static Variables
-	private: // Private Member Variables
-		Client & m_client;
-		inp::KeyHandler<KeyCode> & m_keyHandler;
-		inp::MouseHandler<ButtonCode> & m_mouseHandler;
-		gra::Window m_window;
-	};
-}
+	//Frees media and shuts down SDL
+	void close();
+	//draw method
+	void draw();
+	void update();
 
+	void setPlayer(Player newPlayer);
+	void setEnemy(Player enemy);
+	void setEnemyPos(int x, int y);
 
+	void setAuthorative(bool newState);
+	bool isEnemySet() { return m_enemyInit; }
+	void setEnemyState(bool state) { m_enemyInit = state; }
+	Player & getPlayer() { return m_player; }
+	void setGameState(bool state) { m_gameState = state; }
+	bool getGameState() { return m_gameState; }
 
-#endif // !_GAME_H
+private:
+	//Screen dimension constants
+	const int SCREEN_WIDTH = 600;
+	const int SCREEN_HEIGHT = 300;
+	//The window we'll be rendering to
+	SDL_Window* gWindow = NULL;
+
+	//The surface contained by the window
+	SDL_Surface* gScreenSurface = NULL;
+
+	//The image we will load and show on the screen
+	SDL_Surface* gXOut = NULL;
+
+	//The window renderer
+	SDL_Renderer* gRenderer = NULL;
+
+	SDL_Texture* textureGreenPlayer = NULL;
+	SDL_Texture* textureRedPlayer = NULL;
+	SDL_Texture* textureBluePlayer = NULL;
+
+	Player m_player;
+	Player m_enemy;
+
+	bool isAuthorative = false;
+
+	//hold pointer to session to be able to call server functions in the game
+	Client* session;
+	int m_playerSpeed = 8;
+	bool m_enemyInit = false;
+
+	//used when the server sends info on textures prior to loading
+	bool m_loadedMedia = false;
+
+	bool m_gameState = false;
+};
+
+#include "Client.h"

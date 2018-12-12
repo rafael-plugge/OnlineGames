@@ -1,54 +1,61 @@
-﻿#ifndef _CLIENT_H
-#define _CLIENT_H
+#pragma once
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 
-#include "utilities/WinSockDeleter.h"
-#include "utilities/Network.h"
-#include "game/Player.h"
+#pragma comment(lib,"ws2_32.lib") //Required for WinSock
+#include <WinSock2.h> //For win sockets
+#include <string> //For std::string
+#include <iostream> //For std::cout, std::endl, std::cin.getline
+#include "Player.h"
+//Deal with cyclical referencing
+class Game;
 
-namespace app
+enum Packet
 {
-	class Client
-	{
-	public: // Constructors/Destructor/Assignments
-		Client();
-		~Client();
+	P_ChatMessage,
+	P_Test,
+	P_PlayerData,
+	P_Authority,
+	P_SetPlayer,
+	P_EndGame
+};
+class Client
+{
+public: //Public functions
+	Client(std::string IP, int PORT);
+	bool Connect();
 
-		Client(Client const &) = default;
-		Client & operator=(Client const &) = default;
+	bool SendString(std::string & _string);
+	bool SendPlayer(Player&);
+	bool sendEndGame(bool& _end);
 
-		Client(Client &&) = default;
-		Client & operator=(Client &&) = default;
+	bool CloseConnection();
+	void setGame(Game* _game) { game = _game; }
+private: //Private functions
+	bool ProcessPacket(Packet _packettype);
+	static void ClientThread();
+	//Sending Funcs
+	bool sendall(char * data, int totalbytes);
+	bool SendInt(int _int);
+	bool sendBoolean(bool _boolean);
+	bool SendPacketType(Packet _packettype);
+	
 
-	public: // Public Static Functions
-	public: // Public Member Functions
-		int run(app::game::Player & enemy);
+	//Getting Funcs
+	bool recvall(char * data, int totalbytes);
+	bool GetInt(int & _int);
+	bool GetPacketType(Packet & _packettype);
+	bool GetString(std::string & _string);
+	bool GetPlayer(Player& _player);
+	bool getBoolean(bool _bool);
+	bool getEndGame();
 
-		void send(math::Vector2i position);
-	public: // Public Static Variables
-	public: // Public Member Variables
-		SOCKET m_socket;
-	protected: // Protected Static Functions
-	protected: // Protected Member Functions
-	protected: // Protected Static Variables
-	protected: // Protected Member Variables
-	private: // Private Static Functions
-	private: // Private Member Functions
-		bool init();
-		bool initWindowsSocket();
-		bool initAddressInfo();
-		bool initServerConnection();
+private:
+	SOCKET Connection;//This client's connection to the server
+	SOCKADDR_IN addr; //Address to be binded to our Connection socket
+	int sizeofaddr = sizeof(addr); //Need sizeofaddr for the connect function
+	//hold pointer to the game object in order to be able to alter the game
+	Game* game;
+};
 
-		void update(app::time::nanoseconds const & dt);
-	private: // Private Static Variables
-	private: // Private Member Variables
-		std::atomic_bool m_running;
-		bool m_wsaInit;
-		SOCKADDR_IN m_addressInfo;
-		std::string m_address;
-		std::vector<char> m_sendBuffer;
-		std::mutex m_receiveBufferMutex;
-		std::vector<char> m_receiveBuffer;
-	};
-}
-
-#endif // !_CLIENT_H
+static Client * clientptr; //This client ptr is necessary so that the ClientThread method can access the Client instance/methods. Since the ClientThread method is static, this is the simplest workaround I could think of since there will only be one instance of the client.
+#include "Game.h"

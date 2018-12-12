@@ -85,7 +85,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>.\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>.\deps\libs;.\deps\libs\dbg;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -114,7 +114,7 @@ C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\debug\*.pdg" "$(TargetDir)"<
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>.\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -141,44 +141,19 @@ C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\release\*.dll" "$(TargetDir)
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Project1Client\src\game\Player.cpp" />
-    <ClCompile Include="..\Project1Client\src\graphics\Texture.cpp" />
-    <ClCompile Include="..\Project1Client\src\input\Keyhandler.cpp" />
-    <ClCompile Include="..\Project1Client\src\math\Vector2.cpp" />
-    <ClCompile Include="..\Project1Client\src\utilities\Console.cpp" />
-    <ClCompile Include="..\Project1Client\src\utilities\Network.cpp" />
-    <ClCompile Include="..\Project1Client\src\utilities\PacketType.cpp" />
-    <ClCompile Include="..\Project1Client\src\utilities\SdlDeleter.cpp" />
-    <ClCompile Include="..\Project1Client\src\utilities\Time.cpp" />
-    <ClCompile Include="..\Project1Client\src\utilities\WinSockDeleter.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Player.cpp" />
+    <ClCompile Include="src\SendGetMethods.cpp" />
     <ClCompile Include="src\Server.cpp" />
-    <ClCompile Include="src\stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\Project1Client\src\game\Player.h" />
-    <ClInclude Include="..\Project1Client\src\graphics\Texture.h" />
-    <ClInclude Include="..\Project1Client\src\input\Keyhandler.h" />
-    <ClInclude Include="..\Project1Client\src\math\Vector2.h" />
-    <ClInclude Include="..\Project1Client\src\utilities\Console.h" />
-    <ClInclude Include="..\Project1Client\src\utilities\Network.h" />
-    <ClInclude Include="..\Project1Client\src\utilities\PacketType.h" />
-    <ClInclude Include="..\Project1Client\src\utilities\SdlDeleter.h" />
-    <ClInclude Include="..\Project1Client\src\utilities\Time.h" />
-    <ClInclude Include="..\Project1Client\src\utilities\WinSockDeleter.h" />
-    <ClInclude Include="src\Server.h" />
-    <ClInclude Include="src\stdafx.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="res\.gitkeep" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Project1Client\Project1Client.vcxproj">
       <Project>{5c4ec8fc-7c64-425c-8801-5bbb0bcc1079}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Player.h" />
+    <ClInclude Include="src\Server.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,125 +1,136 @@
-﻿#include "stdafx.h"
 #include "Client.h"
+#include <SDL\SDL.h>
+#include <SDL\SDL_image.h>
 
-static app::Client * client = nullptr;
-
-void clientThread(app::game::Player * enemy)
+bool Client::ProcessPacket(Packet _packettype)
 {
-	app::PacketType type;
+	switch (_packettype)
+	{
+	case P_ChatMessage: //If packet is a chat message packet
+	{
+		std::string Message; //string to store our message we received
+		if (!GetString(Message)) //Get the chat message and store it in variable: Message
+			return false; //If we do not properly get the chat message, return false
+		std::cout << Message << std::endl; //Display the message to the user
+		break;
+	}
+	case P_PlayerData: //If packet is a player object
+	{
+		Player* player =  new Player();
+		if (!GetPlayer(*player))
+		{
+			delete player;
+			return false;
+		}
+		std::cout << "player with radius :" + std::to_string(player->m_radius) << std::endl;
+		if (!game->isEnemySet())
+		{
+			game->setEnemy(*player);
+			game->setEnemyState(true);
+			SendPlayer(game->getPlayer());
+		}
+		else
+		{
+			game->setEnemyPos(player->m_xPos, player->m_yPos);
+		}
+		delete player;
+		break;
+	}
+	case P_Authority: //If packet is authoritative type
+	{
+		game->setAuthorative(true);
+		break;
+	}
+	case P_SetPlayer:
+	{
+		Player* player = new Player();
+		if (!GetPlayer(*player))
+		{
+			delete player;
+			return false;
+		}
+		game->setPlayer(*player);
+		SendPlayer(*player);
+		delete player;
+		break;
+	}
+	case P_EndGame:
+	{
+		if (!getEndGame())
+		{
+			return false;
+		}
+		break;
+	}
+	default: //If packet type is not accounted for
+		std::cout << "Unrecognized packet: " << _packettype << std::endl; //Display that packet was not found
+		break;
+	}
+	return true;
+}
+
+void Client::ClientThread()
+{
+	Packet PacketType;
 	while (true)
 	{
-		if (!app::net::recv(client->m_socket, type)) break;
-		if (!app::net::processPacket(client->m_socket, *enemy, type)) break;
+		if (!clientptr->GetPacketType(PacketType)) //Get packet type
+			break; //If there is an issue getting the packet type, exit this loop
+		if (!clientptr->ProcessPacket(PacketType)) //Process packet (packet type)
+			break; //If there is an issue processing the packet, exit this loop
+	}
+	std::cout << "Lost connection to the server." << std::endl;
+	if (clientptr->CloseConnection()) //Try to close socket connection..., If connection socket was closed properly
+	{
+		std::cout << "Socket to the server was closed successfuly." << std::endl;
+	}
+	else //If connection socket was not closed properly for some reason from our function
+	{
+		std::cout << "Socket was not able to be closed." << std::endl;
 	}
 }
 
-app::Client::Client()
-	: m_running()
-	, m_wsaInit(false)
-	, m_socket(INVALID_SOCKET)
-	, m_addressInfo()
-	, m_address()
-	, m_sendBuffer()
-	, m_receiveBuffer()
+Client::Client(std::string IP, int PORT)
 {
-	m_receiveBuffer.resize(128);
-	client = this;
-}
-
-app::Client::~Client()
-{
-	if (m_wsaInit) { WSACleanup(); }
-}
-
-int app::Client::run(app::game::Player & enemy)
-{
-	if (m_running.store(this->init()); !m_running.load()) { return EXIT_FAILURE; }
-
-	Console::writeLine("Setting up message thread");
-	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)clientThread, (LPVOID)&enemy, NULL, NULL);
-
-	return EXIT_SUCCESS;
-}
-
-void app::Client::send(math::Vector2i position)
-{
-	if (app::net::send(this->m_socket, position))
+	//Winsock Startup
+	WSAData wsaData;
+	WORD DllVersion = MAKEWORD(2, 1);
+	if (WSAStartup(DllVersion, &wsaData) != 0)
 	{
-		Console::writeLine({ "Bytes sent: [", std::to_string(sizeof(math::Vector2i)), "]" });
+		MessageBoxA(NULL, "Winsock startup failed", "Error", MB_OK | MB_ICONERROR);
+		exit(0);
 	}
-	else
-	{
-		Console::writeLine({ "Failed to send packet [", position, "]" });
-	}
+
+	addr.sin_addr.s_addr = inet_addr(IP.c_str()); //Address (127.0.0.1) = localhost (this pc)
+	addr.sin_port = htons(PORT); //Port 
+	addr.sin_family = AF_INET; //IPv4 Socket
+	clientptr = this; //Update ptr to the client which will be used by our client thread
 }
 
-bool app::Client::init()
+bool Client::Connect()
 {
-	try
+	Connection = socket(AF_INET, SOCK_STREAM, NULL); //Set Connection socket
+	if (connect(Connection, (SOCKADDR*)&addr, sizeofaddr) != 0) //If we are unable to connect...
 	{
-		return this->initWindowsSocket() && this->initAddressInfo() && this->initServerConnection();
-	}
-	catch (std::exception const & e)
-	{
-		Console::writeLine({ "Error: [", e.what(), "]" });
+		MessageBoxA(NULL, "Failed to Connect", "Error", MB_OK | MB_ICONERROR);
 		return false;
 	}
-}
 
-bool app::Client::initWindowsSocket()
-{
-	WSADATA wsadata;
-	if (auto result = WSAStartup(MAKEWORD(2, 2), &wsadata); result != NULL)
-	{
-		m_wsaInit = false;
-		Console::writeLine({ "WSAStartup failed with error: [", std::to_string(result), "]" });
-		return false;
-	}
-	else
-	{
-		m_wsaInit = true;
-	}
-
+	std::cout << "Connected!" << std::endl;
+	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)ClientThread, NULL, NULL, NULL); //Create the client thread that will receive any data that the server sends.
 	return true;
 }
 
-bool app::Client::initAddressInfo()
+bool Client::CloseConnection()
 {
-	constexpr auto DEFAULT_PORT = 27020;
-	try
+	if (closesocket(Connection) == SOCKET_ERROR)
 	{
-		auto input = std::string();
-		do
-		{
-			Console::write("Enter Server IP Address: ");
-			std::cin >> input;
-		} while (input.empty());
-		m_address = std::move(input);
+		if (WSAGetLastError() == WSAENOTSOCK) //If socket error is that operation is not performed on a socket (This happens when the socket has already been closed)
+			return true; //return true since connection has already been closed
 
-		m_addressInfo.sin_addr.s_addr = inet_addr(m_address.c_str());
-		m_addressInfo.sin_port = htons(DEFAULT_PORT);
-		m_addressInfo.sin_family = AF_INET;
-
-		return true;
-	}
-	catch (std::exception const & e)
-	{
+		std::string ErrorMessage = "Failed to close the socket. Winsock Error: " + std::to_string(WSAGetLastError()) + ".";
+		MessageBoxA(NULL, ErrorMessage.c_str(), "Error", MB_OK | MB_ICONERROR);
 		return false;
-	}
-}
-
-bool app::Client::initServerConnection()
-{
-	m_socket = socket(AF_INET, SOCK_STREAM, NULL);
-	if (auto result = connect(m_socket, reinterpret_cast<SOCKADDR*>(&m_addressInfo), sizeof(SOCKADDR)); result != NULL)
-	{
-		Console::writeLine("Unable to connect to server!");
-		return false;
-
 	}
 	return true;
-}
-
-void app::Client::update(app::time::nanoseconds const & dt)
-{
 }

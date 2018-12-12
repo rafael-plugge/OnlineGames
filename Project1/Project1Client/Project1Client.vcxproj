@@ -83,7 +83,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -113,7 +113,7 @@ C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\debug\*.pdg" "$(TargetDir)"<
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>$(ProjectDir)src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
@@ -144,48 +144,16 @@ C:\windows\system32\xcopy /Y "$(ProjectDir)deps\bin\release\*.dll" "$(TargetDir)
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Player.cpp" />
     <ClCompile Include="src\Client.cpp" />
     <ClCompile Include="src\Game.cpp" />
-    <ClCompile Include="src\game\Player.cpp" />
-    <ClCompile Include="src\graphics\Texture.cpp" />
-    <ClCompile Include="src\graphics\Window.cpp" />
-    <ClCompile Include="src\graphics\WindowsParams.cpp" />
-    <ClCompile Include="src\input\Keyhandler.cpp" />
-    <ClCompile Include="src\input\MouseHandler.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\math\Vector2.cpp" />
-    <ClCompile Include="src\stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="src\utilities\Console.cpp" />
-    <ClCompile Include="src\utilities\Network.cpp" />
-    <ClCompile Include="src\utilities\PacketType.cpp" />
-    <ClCompile Include="src\utilities\SdlDeleter.cpp" />
-    <ClCompile Include="src\utilities\Time.cpp" />
-    <ClCompile Include="src\utilities\WinSockDeleter.cpp" />
+    <ClCompile Include="src\SendGetMethods.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Player.h" />
     <ClInclude Include="src\Client.h" />
     <ClInclude Include="src\Game.h" />
-    <ClInclude Include="src\game\Player.h" />
-    <ClInclude Include="src\graphics\Texture.h" />
-    <ClInclude Include="src\graphics\Window.h" />
-    <ClInclude Include="src\graphics\WindowsParams.h" />
-    <ClInclude Include="src\input\Keyhandler.h" />
-    <ClInclude Include="src\input\MouseHandler.h" />
-    <ClInclude Include="src\math\Vector2.h" />
-    <ClInclude Include="src\stdafx.h" />
-    <ClInclude Include="src\utilities\Console.h" />
-    <ClInclude Include="src\utilities\Network.h" />
-    <ClInclude Include="src\utilities\PacketType.h" />
-    <ClInclude Include="src\utilities\SdlDeleter.h" />
-    <ClInclude Include="src\utilities\Time.h" />
-    <ClInclude Include="src\utilities\WinSockDeleter.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="res\green-circle.png" />
-    <Image Include="res\red-circle.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
